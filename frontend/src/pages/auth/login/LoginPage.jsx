@@ -5,23 +5,56 @@ import XSvg from "../../../components/svgs/X";
 
 import { MdOutlineMail } from "react-icons/md";
 import { MdPassword } from "react-icons/md";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 
 const LoginPage = () => {
 	const [formData, setFormData] = useState({
-		username: "",
+		email: "",
 		password: "",
+	});
+    const queryClient = useQueryClient();
+    const {
+		mutate: loginMutation,
+		isPending,
+		isError,
+		error,
+	} = useMutation({
+		mutationFn: async ({ email, password }) => {
+			try {
+				const res = await fetch("/api/auth/login", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({ email, password }),
+				});
+
+				const data = await res.json();
+
+				if (!res.ok) {
+					throw new Error(data.error || "Something went wrong");
+				}
+			} catch (error) {
+				throw new Error(error);
+			}
+		},
+		onSuccess: () => {
+			// refetch the authUser
+		    queryClient.invalidateQueries({ queryKey: ["authUser"] });
+		},
 	});
 
 	const handleSubmit = (e) => {
 		e.preventDefault();
-		console.log(formData);
+		loginMutation(formData);
 	};
 
 	const handleInputChange = (e) => {
 		setFormData({ ...formData, [e.target.name]: e.target.value });
 	};
 
-	const isError = false;
+	
 
 	return (
 		<div className='max-w-screen-xl mx-auto flex h-screen'>
@@ -37,8 +70,8 @@ const LoginPage = () => {
 						<input
 							type='text'
 							className='grow'
-							placeholder='username'
-							name='username'
+							placeholder='Email'
+							name='email'
 							onChange={handleInputChange}
 							value={formData.username}
 						/>

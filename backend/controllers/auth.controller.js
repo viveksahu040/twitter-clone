@@ -4,9 +4,9 @@ import { generateTokenAndSetCookie } from "../lib/utils/generateToken.js";
 
 export const signup = async (req, res) => {
     try {
-        const {fullname , username , email , password }= req.body;
+        const {fullName , username , email , password }= req.body;
 
-        if (!fullname || !username || !email || !password) {
+        if (!fullName || !username || !email || !password) {
             return res.status(400).json({ error: "All fields are required" });
         }
 
@@ -17,7 +17,7 @@ export const signup = async (req, res) => {
 
         const existingUser = await User.findOne({ username });
 		if (existingUser) {
-			return res.status(400).json({ error: "Username is already taken" });
+			return res.status(400).json({ error: "username is already taken" });
 		}
 
         const existingEmail = await User.findOne({ email });
@@ -33,7 +33,7 @@ export const signup = async (req, res) => {
 		const hashedPassword = await bcrypt.hash(password, salt);
 
         const newUser = new User({
-			fullname,
+			fullName,
 			username,
 			email,
 			password: hashedPassword,
@@ -45,7 +45,7 @@ export const signup = async (req, res) => {
 
 			res.status(201).json({
 				_id: newUser._id,
-				fullName: newUser.fullname,
+				fullName: newUser.fullName,
 				username: newUser.username,
 				email: newUser.email,
 				followers: newUser.followers,
@@ -62,6 +62,7 @@ export const signup = async (req, res) => {
     } catch (error) {
         console.log("Error in signup controller", error.message);
 		res.status(500).json({ error: "Internal Server Error" });
+		
     }
 };
 
@@ -78,7 +79,7 @@ export const login = async (req, res) => {
 
 	res.status(200).json({
 		_id: user._id,
-		fullName: user.fullname,
+		fullName: user.fullName,
 		username: user.username,
 		email: user.email,
 		followers: user.followers,
