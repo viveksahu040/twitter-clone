@@ -1,23 +1,80 @@
-import { FaRegComment } from "react-icons/fa";
+import { FaRegComment, FaRegHeart, FaTrash } from "react-icons/fa";
 import { BiRepost } from "react-icons/bi";
-import { FaRegHeart } from "react-icons/fa";
-import { FaRegBookmark } from "react-icons/fa6";
-import { FaTrash } from "react-icons/fa";
+import { FaRegBookmark } from "react-icons/fa6";;
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import LoadingSpinner from "./LoadingSpinner";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const Post = ({ post }) => {
 	const [comment, setComment] = useState("");
+	const { data: authUser , isLoading ,error} = useQuery({ queryKey: ["authUser"] });
+	const queryClient = useQueryClient();
+    
+	 // Early return if authUser is still loading
+	 if (isLoading) {
+        return <div>Loading...</div>;
+    }
+
+    if (error) {
+        return <div>Error fetching user data.</div>;
+    }
+
+
 	const postOwner = post.user;
 	const isLiked = false;
 
-	const isMyPost = true;
+	   // Ensure authUser is defined before accessing its properties
+	const isMyPost = authUser && authUser._id ? authUser._id === postOwner._id : false;
 
-	const formattedDate = "1h";
 
-	const isCommenting = false;
+    const formattedDate = "1h";
 
-	const handleDeletePost = () => {};
+	const { mutate: deletePost, isPending: isDeleting } = useMutation({
+		mutationFn :async ()=>{
+			try {
+				const res = await fetch(`/api/posts/${post._id}`, {
+					method: "DELETE",
+				});
+				const data = await res.json();
+
+				if (!res.ok) {
+					throw new Error(data.error || "Something went wrong");
+				}
+				return data;
+			} catch (error) {
+				throw new Error(error);
+			}
+		},
+		onSuccess: () => {
+			toast.success("Post deleted successfully");
+			queryClient.invalidateQueries({ queryKey: ["posts"] });
+		},
+	})
+
+	const { mutate: likePost, isPending: isLiking } = useMutation({
+           mutationFn : async() =>{
+			try {
+				const res = await fetch(`/api/posts/like/${post._id}`, {
+					method: "POST",
+				});
+				const data = await res.json();
+				if (!res.ok) {
+					throw new Error(data.error || "Something went wrong");
+				}
+				return data;
+			} catch (error) {
+				throw new Error(error);
+			}
+		   }
+	})
+
+	const { mutate: commentPost, isPending: isCommenting } = useMutation({})
+
+	
+	const handleDeletePost = () => {
+		deletePost();
+	};
 
 	const handlePostComment = (e) => {
 		e.preventDefault();
@@ -29,7 +86,9 @@ const Post = ({ post }) => {
 		<>
 			<div className='flex gap-2 items-start p-4 border-b border-gray-700'>
 				<div className='avatar'>
+
 					<Link to={`/profile/${postOwner.username}`} className='w-8 rounded-full overflow-hidden'>
+
 						<img src={postOwner.profileImg || "/avatar-placeholder.png"} />
 					</Link>
 				</div>
@@ -45,7 +104,11 @@ const Post = ({ post }) => {
 						</span>
 						{isMyPost && (
 							<span className='flex justify-end flex-1'>
-								<FaTrash className='cursor-pointer hover:text-red-500' onClick={handleDeletePost} />
+								{!isDeleting && (
+									<FaTrash className='cursor-pointer hover:text-red-500' onClick={handleDeletePost} />
+								)}
+
+								{isDeleting && <LoadingSpinner size='sm' />}
 							</span>
 						)}
 					</div>
@@ -68,7 +131,7 @@ const Post = ({ post }) => {
 								<FaRegComment className='w-4 h-4  text-slate-500 group-hover:text-sky-400' />
 								<span className='text-sm text-slate-500 group-hover:text-sky-400'>
 									{post.comments.length}
-								</span>
+								</span>  
 							</div>
 							{/* We're using Modal Component from DaisyUI */}
 							<dialog id={`comments_modal${post._id}`} className='modal border-none outline-none'>
@@ -151,5 +214,12 @@ const Post = ({ post }) => {
 			</div>
 		</>
 	);
-};
-export default Post;
+}; 
+
+export default Post;  
+
+
+
+
+
+
