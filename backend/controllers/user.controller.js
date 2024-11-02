@@ -132,7 +132,7 @@ export const updateUser = async (req, res) => {
 			coverImg = uploadedResponse.secure_url;
 		}
 
-		user.fullname = fullName || user.fullName;
+		user.fullName = fullName || user.fullName;
 		user.email = email || user.email;
 		user.username = username || user.username;
 		user.bio = bio || user.bio;
